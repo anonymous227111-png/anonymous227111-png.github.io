@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRISM — Performer RS-IMLE for Single-pass Multisensory Imitation Learning</title>
+<meta name="description" content="PRISM: a single-pass, real-time, multisensory imitation policy. Project page with hardware and simulation videos.">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+    --paper:        #f3ede2;
+    --paper-soft:   #ece5d6;
+    --ink:          #161513;
+    --ink-soft:     #3a3833;
+    --ink-mute:     #7a7669;
+    --rule:         #c8bfae;
+    --rule-soft:    #ddd4c1;
+    --accent:       #c63a1f;
+    --accent-deep:  #8a2612;
+
+    --s1: #e94e3a;
+    --s2: #e6a23a;
+    --s3: #e8d23e;
+    --s4: #5fb86b;
+    --s5: #3a8fc0;
+    --s6: #5a4dbf;
+
+    --display: "Instrument Serif", "Cormorant Garamond", Georgia, serif;
+    --body:    "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, sans-serif;
+    --mono:    "JetBrains Mono", ui-monospace, Menlo, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--body);
+    font-size: 17px;
+    line-height: 1.55;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-image:
+      radial-gradient(circle at 18% 12%, rgba(198,58,31,0.04) 0, transparent 38%),
+      radial-gradient(circle at 82% 78%, rgba(58,143,192,0.045) 0, transparent 42%);
+  }
+
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.35;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.08 0 0 0 0 0.07 0 0 0 0 0.06 0 0 0 0.18 0'/%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode: multiply;
+  }
+
+  .container {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 0 32px;
+    position: relative;
+    z-index: 2;
+  }
+
+  .spectrum {
+    height: 4px;
+    width: 100%;
+    background: linear-gradient(90deg,
+      var(--s1) 0%, var(--s2) 20%, var(--s3) 40%,
+      var(--s4) 60%, var(--s5) 80%, var(--s6) 100%);
+    position: relative;
+  }
+  .spectrum::after {
+    content: "";
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(0,0,0,0.18), transparent);
+  }
+
+  .topbar {
+    border-bottom: 1px solid var(--rule);
+    background: rgba(243, 237, 226, 0.7);
+    backdrop-filter: blur(6px);
+  }
+  .topbar-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  .topbar-inner span.dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-right: 8px;
+    vertical-align: middle;
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: 0.5; transform: scale(0.85); }
+  }
+
+  .hero {
+    padding: 80px 0 56px;
+    border-bottom: 1px solid var(--rule);
+    position: relative;
+  }
+
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .eyebrow::before {
+    content: "";
+    width: 36px; height: 1px;
+    background: var(--ink);
+  }
+
+  h1.title {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(48px, 7.4vw, 104px);
+    line-height: 0.96;
+    letter-spacing: -0.015em;
+    margin-bottom: 24px;
+    color: var(--ink);
+  }
+  h1.title .acronym {
+    font-style: italic;
+    background: linear-gradient(135deg, var(--accent), var(--s5) 70%, var(--s6));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    padding-right: 0.04em;
+  }
+
+  .subtitle {
+    font-family: var(--display);
+    font-style: italic;
+    font-size: clamp(22px, 2.6vw, 32px);
+    color: var(--ink-soft);
+    max-width: 880px;
+    margin-bottom: 48px;
+    line-height: 1.25;
+  }
+
+  .authors {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 28px;
+    margin-bottom: 18px;
+    font-size: 17px;
+  }
+  .author { display: inline-block; }
+  .author sup {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--accent);
+    margin-left: 2px;
+  }
+
+  .affiliations {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 24px;
+    font-size: 14px;
+    color: var(--ink-mute);
+    margin-bottom: 40px;
+  }
+  .affiliations div sup {
+    font-family: var(--mono);
+    color: var(--accent);
+    margin-right: 4px;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 20px;
+    font-family: var(--body);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+    text-decoration: none;
+    color: var(--ink);
+    background: var(--paper);
+    border: 1px solid var(--ink);
+    border-radius: 0;
+    transition: all 0.18s ease;
+    cursor: pointer;
+  }
+  .btn:hover {
+    background: var(--ink);
+    color: var(--paper);
+    transform: translate(-2px, -2px);
+    box-shadow: 4px 4px 0 var(--accent);
+  }
+  .btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+  .btn.primary {
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .btn.primary:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+
+  section {
+    padding: 80px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .section-head {
+    margin-bottom: 48px;
+    max-width: 880px;
+  }
+  .section-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+    display: block;
+  }
+  .section-title {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(34px, 4.4vw, 56px);
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    margin-bottom: 18px;
+  }
+  .section-title em {
+    font-style: italic;
+    color: var(--accent);
+  }
+  .section-blurb {
+    font-size: 17px;
+    color: var(--ink-soft);
+    max-width: 720px;
+    line-height: 1.6;
+  }
+
+  .abstract {
+    display: grid;
+    grid-template-columns: 1fr 2.4fr;
+    gap: 48px;
+    align-items: start;
+  }
+  .abstract aside {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    border-top: 2px solid var(--ink);
+    padding-top: 14px;
+  }
+  .abstract p {
+    font-size: 18px;
+    line-height: 1.65;
+    color: var(--ink-soft);
+    margin-bottom: 16px;
+  }
+  .abstract p strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  @media (max-width: 760px) {
+    .abstract { grid-template-columns: 1fr; gap: 24px; }
+  }
+
+  .stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-top: 48px;
+    border-top: 1px solid var(--ink);
+    border-bottom: 1px solid var(--ink);
+  }
+  .stat {
+    padding: 28px 24px;
+    border-right: 1px solid var(--rule);
+  }
+  .stat:last-child { border-right: none; }
+  .stat-num {
+    font-family: var(--display);
+    font-size: clamp(38px, 4.5vw, 56px);
+    line-height: 1;
+    margin-bottom: 8px;
+    color: var(--ink);
+  }
+  .stat-num em { font-style: italic; color: var(--accent); }
+  .stat-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+  }
+  @media (max-width: 760px) {
+    .stats { grid-template-columns: repeat(2, 1fr); }
+    .stat:nth-child(2) { border-right: none; }
+    .stat:nth-child(1), .stat:nth-child(2) { border-bottom: 1px solid var(--rule); }
+  }
+
+  /* —— VIDEO GRIDS ———————————————— */
+  .video-grid { display: grid; gap: 24px; }
+  .video-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .video-grid.cols-1 { grid-template-columns: 1fr; }
+  @media (max-width: 760px) {
+    .video-grid.cols-2 { grid-template-columns: 1fr; }
+  }
+
+  .vcard {
+    background: var(--paper-soft);
+    border: 1px solid var(--rule);
+    overflow: hidden;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    position: relative;
+  }
+  .vcard:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 14px 30px -16px rgba(22,21,19,0.4);
+  }
+
+  .vcard .vmedia {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    background: #1a1916;
+    overflow: hidden;
+  }
+  .vcard.tall .vmedia { aspect-ratio: 4 / 3; }
+
+  /* YouTube iframes fill the aspect-ratio container */
+  .vcard .vmedia iframe {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+  }
+
+  .vcard .vmeta {
+    padding: 18px 22px 22px;
+    border-top: 1px solid var(--rule);
+  }
+  .vcard .vtag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-mute);
+    margin-bottom: 10px;
+  }
+  .vcard .vtag .tag-dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+  }
+  .vtag .d-rgb     { background: var(--s1); }
+  .vtag .d-depth   { background: var(--s5); }
+  .vtag .d-tactile { background: var(--s4); }
+  .vtag .d-prop    { background: var(--s6); }
+  .vtag .d-text    { background: var(--s3); }
+  .vtag .d-audio   { background: var(--s2); }
+
+  .vcard h3 {
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: 24px;
+    line-height: 1.2;
+    margin-bottom: 8px;
+    letter-spacing: -0.005em;
+  }
+  .vcard h3 em { font-style: italic; color: var(--accent); }
+  .vcard .vdesc {
+    font-size: 14px;
+    color: var(--ink-mute);
+    line-height: 1.5;
+  }
+
+  .modality-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .pill {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    padding: 3px 8px;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    color: var(--ink-soft);
+    text-transform: uppercase;
+  }
+
+  .method-strip {
+    margin-top: 40px;
+    padding: 32px;
+    background: var(--paper-soft);
+    border: 1px solid var(--rule);
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 8px;
+    align-items: center;
+  }
+  .mod-cell {
+    text-align: center;
+    padding: 16px 8px;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    position: relative;
+    transition: transform 0.2s ease;
+  }
+  .mod-cell:hover { transform: translateY(-2px); }
+  .mod-cell .mod-icon {
+    width: 36px; height: 36px;
+    margin: 0 auto 8px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 50%;
+    color: white;
+  }
+  .mod-cell .mod-icon svg { width: 18px; height: 18px; }
+  .mod-cell .mod-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .mod-cell:nth-child(1) .mod-icon { background: var(--s1); }
+  .mod-cell:nth-child(2) .mod-icon { background: var(--s5); }
+  .mod-cell:nth-child(3) .mod-icon { background: var(--s4); }
+  .mod-cell:nth-child(4) .mod-icon { background: var(--s6); }
+  .mod-cell:nth-child(5) .mod-icon { background: var(--s3); }
+  .mod-cell:nth-child(6) .mod-icon { background: var(--s2); }
+  @media (max-width: 760px) {
+    .method-strip { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  .bibtex {
+    background: var(--ink);
+    color: var(--paper);
+    padding: 28px 32px;
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.7;
+    overflow-x: auto;
+    border: 1px solid var(--ink);
+    position: relative;
+  }
+  .bibtex pre { white-space: pre; font-family: inherit; }
+  .copy-btn {
+    position: absolute;
+    top: 16px; right: 16px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    background: transparent;
+    border: 1px solid rgba(243,237,226,0.4);
+    color: var(--paper);
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: all 0.18s;
+  }
+  .copy-btn:hover { background: var(--accent); border-color: var(--accent); }
+  .copy-btn.copied { background: var(--s4); border-color: var(--s4); }
+
+  footer {
+    padding: 60px 0 40px;
+    color: var(--ink-mute);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  .quicknav {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .quicknav a {
+    width: 38px; height: 38px;
+    background: var(--ink);
+    color: var(--paper);
+    text-decoration: none;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono);
+    font-size: 11px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink);
+    transition: all 0.2s;
+  }
+  .quicknav a:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    transform: scale(1.08);
+  }
+  @media (max-width: 760px) { .quicknav { display: none; } }
+
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+</style>
+</head>
+<body>
+
+<div class="spectrum"></div>
+
+<div class="topbar">
+  <div class="container topbar-inner">
+    <div><span class="dot"></span>Project Page · 2026</div>
+    <div>RSS&nbsp;·&nbsp;Submission&nbsp;#769</div>
+  </div>
+</div>
+
+<header class="hero">
+  <div class="container">
+    <div class="eyebrow">Multisensory · Single-Pass · Real-Time Imitation</div>
+
+    <h1 class="title"><span class="acronym">PRISM</span></h1>
+
+    <div class="subtitle">
+      Performer RS&ndash;IMLE for Single-pass<br>
+      Multisensory Imitation Learning
+    </div>
+
+    <div class="authors">
+      <span class="author">Anonymous<sup>1</sup></span>
+      <!-- <span class="author">Pratap Tokekar<sup>1</sup></span>
+      <span class="author">Stefano Di Cairano<sup>2</sup></span>
+      <span class="author">Alexander Schperberg<sup>2</sup></span> -->
+    </div>
+
+    <div class="affiliations">
+      <div><sup>1</sup>Anonymous</div>
+      <!-- <div><sup>2</sup>Mitsubishi Electric Research Laboratories (MERL)</div> -->
+    </div>
+
+    <div class="actions">
+      <a href="#" class="btn primary">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Paper (PDF)
+      </a>
+      <a href="#" class="btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+        arXiv
+      </a>
+      <a href="#" class="btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+        Code
+      </a>
+      <a href="#videos" class="btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+        Videos
+      </a>
+      <a href="#cite" class="btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21v-13a2 2 0 0 1 2-2h3l2-3h4l2 3h3a2 2 0 0 1 2 2v13z"/><circle cx="12" cy="13" r="4"/></svg>
+        BibTeX
+      </a>
+    </div>
+  </div>
+</header>
+
+<section class="reveal">
+  <div class="container">
+    <div class="abstract">
+      <aside>Abstract</aside>
+      <div>
+        <p>
+          Robotic imitation learning typically requires policies that capture <strong>multimodal action distributions</strong>, operate at real-time control rates, and accommodate multiple sensing modalities. Most generative approaches&mdash;diffusion, flow matching, IMLE&mdash;satisfy only a subset of these requirements.
+        </p>
+        <p>
+          We introduce <strong>PRISM</strong>, a single-pass policy built on a <em>batch-global</em> rejection-sampling variant of IMLE. PRISM couples a <strong>temporal multisensory encoder</strong> (RGB, depth, tactile, audio, proprioception) with a <strong>linear-attention generator</strong> built on the Performer architecture, generating full action sequences in one batched forward pass.
+        </p>
+        <p>
+          Across CALVIN, MetaWorld, Robomimic, and a real-robot suite (Unitree GO2 + D1 arm; UR-class tabletop), PRISM outperforms state-of-the-art diffusion policies by <strong>10&ndash;25%</strong> in success while sustaining <strong>30&ndash;50&nbsp;Hz</strong> closed-loop control and reducing trajectory jerk by up to <strong>50&times;</strong>.
+        </p>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-num"><em>+25%</em></div>
+        <div class="stat-label">Success vs. Diffusion (CALVIN, 10% data)</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">50<em>&times;</em></div>
+        <div class="stat-label">Lower trajectory jerk</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">50&nbsp;<em>Hz</em></div>
+        <div class="stat-label">Real-robot control rate</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">1<em>-pass</em></div>
+        <div class="stat-label">Single-step inference (NFE = 1)</div>
+      </div>
+    </div>
+
+    <div class="method-strip" aria-label="modalities">
+      <div class="mod-cell">
+        <div class="mod-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-5-5L5 21"/></svg></div>
+        <div class="mod-label">RGB</div>
+      </div>
+      <div class="mod-cell">
+        <div class="mod-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h4l3-9 4 18 3-9h4"/></svg></div>
+        <div class="mod-label">Depth</div>
+      </div>
+      <div class="mod-cell">
+        <div class="mod-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11.24V7.5a2.5 2.5 0 0 1 5 0v3.74"/><path d="M14 11h3a3 3 0 0 1 3 3v4a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4v-4a3 3 0 0 1 3-3h3"/></svg></div>
+        <div class="mod-label">Tactile</div>
+      </div>
+      <div class="mod-cell">
+        <div class="mod-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="9"/></svg></div>
+        <div class="mod-label">Proprio.</div>
+      </div>
+      <div class="mod-cell">
+        <div class="mod-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h10"/></svg></div>
+        <div class="mod-label">Text</div>
+      </div>
+      <div class="mod-cell">
+        <div class="mod-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/></svg></div>
+        <div class="mod-label">Audio</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VIDEOS — section 1 -->
+<section id="videos" class="reveal">
+  <div class="container">
+    <div class="section-head">
+      <span class="section-num">§ 01 &nbsp;/&nbsp; Real-World</span>
+      <h2 class="section-title">Language &amp; audio &mdash; <em>vision-conditioned</em> manipulation.</h2>
+      <p class="section-blurb">Four tabletop tasks executed by PRISM on a fixed-base manipulator. The policy fuses a frozen CLIP text embedding and contact-microphone audio with the visual context stream, attending to color, shape, and spatial descriptors to select the correct object and grasp.</p>
+    </div>
+
+    <div class="video-grid cols-2">
+
+      <div class="vcard">
+        <div class="vmedia">
+          <iframe src="https://www.youtube.com/embed/FFtmzX-h5ZY?rel=0&modestbranding=1"
+            title="Stack blue cup on green cup"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+        <div class="vmeta">
+          <div class="vtag"><span class="tag-dot d-rgb"></span>Real-world · Language-conditioned</div>
+          <h3>"Stack <em>blue cup</em> on green cup"</h3>
+          <div class="vdesc">Vertical stacking with color discrimination. 92 ± 4% success across 50 trials.</div>
+          <div class="modality-pills">
+            <span class="pill">RGB</span><span class="pill">Audio</span><span class="pill">Text</span><span class="pill">Proprio</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="vcard">
+        <div class="vmedia">
+          <iframe src="https://www.youtube.com/embed/sOxyIx-hw0Y?rel=0&modestbranding=1"
+            title="Stack yellow cup on blue cup"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+        <div class="vmeta">
+          <div class="vtag"><span class="tag-dot d-text"></span>Real-world · Language-conditioned</div>
+          <h3>"Stack <em>yellow cup</em> on blue cup"</h3>
+          <div class="vdesc">Requires reordering from initial configuration. 88 ± 5% success.</div>
+          <div class="modality-pills">
+            <span class="pill">RGB</span><span class="pill">Audio</span><span class="pill">Text</span><span class="pill">Proprio</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="vcard">
+        <div class="vmedia">
+          <iframe src="https://www.youtube.com/embed/eUZpcJ7AIOU?rel=0&modestbranding=1"
+            title="Put green ball in the green cup"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+        <div class="vmeta">
+          <div class="vtag"><span class="tag-dot d-audio"></span>Real-world · Language-conditioned</div>
+          <h3>"Put <em>green ball</em> in the green cup"</h3>
+          <div class="vdesc">Shape and color matching; grasp aperture must adapt to ball geometry. 84 ± 6%.</div>
+          <div class="modality-pills">
+            <span class="pill">RGB</span><span class="pill">Audio</span><span class="pill">Text</span><span class="pill">Proprio</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="vcard">
+        <div class="vmedia">
+          <iframe src="https://www.youtube.com/embed/kXBHLE6dHDI?rel=0&modestbranding=1"
+            title="Hang the green cup on the hook"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+        <div class="vmeta">
+          <div class="vtag"><span class="tag-dot d-prop"></span>Real-world · Language-conditioned</div>
+          <h3>"Hang the <em>green cup</em> on the hook"</h3>
+          <div class="vdesc">Precise spatial reasoning. 78 ± 7% success across 50 trials.</div>
+          <div class="modality-pills">
+            <span class="pill">RGB</span><span class="pill">Audio</span><span class="pill">Text</span><span class="pill">Proprio</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- VIDEOS — section 2 -->
+<section class="reveal">
+  <div class="container">
+    <div class="section-head">
+      <span class="section-num">§ 02 &nbsp;/&nbsp; Loco-Manipulation</span>
+      <h2 class="section-title">Vision &amp; tactile <em>contact-rich</em> manipulation on a quadruped.</h2>
+      <p class="section-blurb">PRISM running on a Unitree GO2 with a 7-DoF D1 arm. Tactile feedback from the gripper is fused with wrist and shoulder RGB at every timestep, enabling robust contact-rich behaviors that pure vision baselines fail to recover.</p>
+    </div>
+
+    <div class="video-grid cols-2">
+
+      <div class="vcard tall">
+        <div class="vmedia">
+          <iframe src="https://www.youtube.com/embed/L2iA7ME7tew?rel=0&modestbranding=1"
+            title="Multi-object pick and place"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+        <div class="vmeta">
+          <div class="vtag"><span class="tag-dot d-tactile"></span>GO2 + D1 · Vision + Tactile</div>
+          <h3>Multi-object <em>pick &amp; place</em></h3>
+          <div class="vdesc">Locomotion phase + grasp + transport + release. PRISM scales from 15 to 35 demos with +30% success improvement.</div>
+          <div class="modality-pills">
+            <span class="pill">Wrist RGB</span><span class="pill">Shoulder RGB</span><span class="pill">Tactile</span><span class="pill">Proprio</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="vcard tall">
+        <div class="vmedia">
+          <iframe src="https://www.youtube.com/embed/6db6R7x6pqM?rel=0&modestbranding=1"
+            title="High-precision peg insertion"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+        <div class="vmeta">
+          <div class="vtag"><span class="tag-dot d-tactile"></span>GO2 + D1 · Vision + Tactile</div>
+          <h3>High-precision <em>peg insertion</em></h3>
+          <div class="vdesc">Tactile contact patterns critical for sub-mm alignment. +20% success vs. Diffusion Policy at matched demo count.</div>
+          <div class="modality-pills">
+            <span class="pill">Wrist RGB</span><span class="pill">Shoulder RGB</span><span class="pill">Tactile</span><span class="pill">Proprio</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- VIDEOS — section 3 -->
+<section class="reveal">
+  <div class="container">
+    <div class="section-head">
+      <span class="section-num">§ 03 &nbsp;/&nbsp; Pre-Manipulation</span>
+      <h2 class="section-title">Whole-body <em>parking</em> for a 14-DoF locomotion + manipulation policy.</h2>
+      <p class="section-blurb">Before contact-rich manipulation can begin, the GO2 base must reach a stable, kinematically reachable pose. PRISM&rsquo;s 14-D action space (gripper + EE pose + base linear &amp; angular velocity) lets a single policy plan the approach end-to-end from RGB observations.</p>
+    </div>
+
+    <div class="video-grid cols-2">
+
+      <div class="vcard">
+        <div class="vmedia">
+          <iframe src="https://www.youtube.com/embed/y_P_D9C576I?rel=0&modestbranding=1"
+            title="Pre-manipulation parking trial A"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+        <div class="vmeta">
+          <div class="vtag"><span class="tag-dot d-rgb"></span>GO2 + D1 · Locomotion phase</div>
+          <h3>Pre-manipulation <em>parking</em> &mdash; trial A</h3>
+          <div class="vdesc">Approach phase with base locomotion: position the platform within reachable workspace before manipulation begins.</div>
+          <div class="modality-pills">
+            <span class="pill">Wrist RGB</span><span class="pill">Shoulder RGB</span><span class="pill">Proprio</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="vcard">
+        <div class="vmedia">
+          <iframe src="https://www.youtube.com/embed/DpnK3cw8Bpc?rel=0&modestbranding=1"
+            title="Pre-manipulation parking trial B"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+        <div class="vmeta">
+          <div class="vtag"><span class="tag-dot d-rgb"></span>GO2 + D1 · Locomotion phase</div>
+          <h3>Pre-manipulation <em>parking</em> &mdash; trial B</h3>
+          <div class="vdesc">Alternate initial pose; the receding-horizon controller replans every <code>T<sub>a</sub></code> steps using the ProxyScore smoothness rule.</div>
+          <div class="modality-pills">
+            <span class="pill">Wrist RGB</span><span class="pill">Shoulder RGB</span><span class="pill">Proprio</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- VIDEOS — section 4 -->
+<section class="reveal">
+  <div class="container">
+    <div class="section-head">
+      <span class="section-num">§ 04 &nbsp;/&nbsp; Simulation</span>
+      <h2 class="section-title">CALVIN benchmark &mdash; <em>six tasks</em> from a single trained policy.</h2>
+      <p class="section-blurb">Trained on only 10% of CALVIN Env&nbsp;D, PRISM improves success by ~25% over diffusion and ~20% over flow matching while reducing motion jerk by ~20&times;. The reel below shows six representative long-horizon tasks executed in a single rollout strip.</p>
+    </div>
+
+    <div class="video-grid cols-1">
+
+      <div class="vcard">
+        <div class="vmedia">
+          <iframe src="https://www.youtube.com/embed/TlDhq7LqgFI?rel=0&modestbranding=1"
+            title="CALVIN six-task rollout reel"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+        </div>
+        <div class="vmeta">
+          <div class="vtag"><span class="tag-dot d-depth"></span>CALVIN (Env D · 10% data) · Simulation</div>
+          <h3>Long-horizon <em>multi-task</em> rollout</h3>
+          <div class="vdesc">Six representative tasks executed by a single PRISM policy. Wrist + static RGB, depth, tactile, and proprioception are all fused per timestep. Jerk = 0.052, mode-switch rate = 0.101 &mdash; both substantially below diffusion and flow baselines.</div>
+          <div class="modality-pills">
+            <span class="pill">Static RGB</span><span class="pill">Wrist RGB</span><span class="pill">Depth</span><span class="pill">Tactile</span><span class="pill">Proprio</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<section id="cite" class="reveal">
+  <div class="container">
+    <div class="section-head">
+      <span class="section-num">§ 05 &nbsp;/&nbsp; Citation</span>
+      <h2 class="section-title">If you find <em>PRISM</em> useful, please cite.</h2>
+    </div>
+
+    <div class="bibtex">
+      <button class="copy-btn" onclick="copyBibtex(this)">Copy</button>
+<pre id="bib">@inproceedings{bhaskar2026prism,
+  title     = {{PRISM}: Performer {RS-IMLE} for Single-pass Multisensory Imitation Learning},
+  author    = {Anonymous},
+  booktitle = {Robotics: Science and Systems (RSS)},
+  year      = {2026},
+}</pre>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="container">&nbsp;</div>
+</footer>
+
+<nav class="quicknav" aria-label="Quick navigation">
+  <a href="#videos" title="Section 1">01</a>
+  <a href="#cite"   title="Cite">§</a>
+</nav>
+
+<script>
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        io.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  function copyBibtex(btn) {
+    const text = document.getElementById('bib').innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      btn.textContent = 'Copied';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copy';
+        btn.classList.remove('copied');
+      }, 1600);
+    });
+  }
+</script>
+</body>
+</html>
