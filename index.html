@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MIRROR — Performer RS-IMLE for Single-pass Multisensory Imitation Learning</title>
-<meta name="description" content="MIRROR: Multisensory Implicit Rejection-sampled RObotic policy. Project page with hardware and simulation videos.">
+<title>PRISM — Bridging Multimodality and Real-Time Control in Multisensory Policies</title>
+<meta name="description" content="PRISM: Performer RS-IMLE for Multisensory Imitation. Project page with hardware and simulation videos.">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -333,7 +333,6 @@
     .stat:nth-child(1), .stat:nth-child(2) { border-bottom: 1px solid var(--rule); }
   }
 
-  /* —— VIDEO GRIDS ———————————————— */
   .video-grid { display: grid; gap: 24px; }
   .video-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
   .video-grid.cols-1 { grid-template-columns: 1fr; }
@@ -361,7 +360,6 @@
   }
   .vcard.tall .vmedia { aspect-ratio: 4 / 3; }
 
-  /* YouTube iframes fill the aspect-ratio container */
   .vcard .vmedia iframe {
     position: absolute;
     inset: 0;
@@ -557,32 +555,28 @@
 
 <div class="topbar">
   <div class="container topbar-inner">
-    <div><span class="dot"></span>Project Page · 2026</div>
-    <div>ICML&nbsp;·&nbsp;Submission&nbsp;#769</div>
+    <div><span class="dot"></span>Project Page &middot; 2026</div>
+    <div>CoRL&nbsp;&middot;&nbsp;Submission</div>
   </div>
 </div>
 
 <header class="hero">
   <div class="container">
-    <div class="eyebrow">Multisensory · Single-Pass · Real-Time Imitation</div>
+    <div class="eyebrow">Multisensory &middot; Single-Pass &middot; Real-Time Imitation</div>
 
-    <h1 class="title"><span class="acronym">MIRROR</span></h1>
+    <h1 class="title"><span class="acronym">PRISM</span></h1>
 
     <div class="subtitle">
-      Multisensory Implicit Rejection-sampled <br>
-      RObotic policys
+      Bridging Multimodality and Real-Time Control <br>
+      in Multisensory Policies
     </div>
 
     <div class="authors">
       <span class="author">Anonymous<sup>1</sup></span>
-      <!-- <span class="author">Pratap Tokekar<sup>1</sup></span>
-      <span class="author">Stefano Di Cairano<sup>2</sup></span>
-      <span class="author">Alexander Schperberg<sup>2</sup></span> -->
     </div>
 
     <div class="affiliations">
       <div><sup>1</sup>Anonymous</div>
-      <!-- <div><sup>2</sup>Mitsubishi Electric Research Laboratories (MERL)</div> -->
     </div>
 
     <div class="actions">
@@ -619,10 +613,10 @@
           Robotic imitation learning typically requires policies that capture <strong>multimodal action distributions</strong>, operate at real-time control rates, and accommodate multiple sensing modalities. Most generative approaches&mdash;diffusion, flow matching, IMLE&mdash;satisfy only a subset of these requirements.
         </p>
         <p>
-          We introduce <strong>MIRROR</strong>, a single-pass policy built on a <em>batch-global</em> rejection-sampling variant of IMLE. MIRROR couples a <strong>temporal multisensory encoder</strong> (RGB, depth, tactile, audio, proprioception) with a <strong>linear-attention generator</strong> built on the Performer architecture, generating full action sequences in one batched forward pass.
+          We introduce <strong>PRISM</strong>, a single-pass policy built on a <em>batch-global</em> rejection-sampling variant of IMLE. PRISM couples a <strong>temporal multisensory encoder</strong> (RGB, depth, tactile, audio, proprioception) with a <strong>linear-attention generator</strong> built on the Performer architecture, generating full action sequences in one batched forward pass.
         </p>
         <p>
-          Across CALVIN, MetaWorld, Robomimic, and a real-robot suite (Unitree GO2 + D1 arm; UR-class tabletop), MIRROR outperforms state-of-the-art diffusion policies by <strong>10&ndash;25%</strong> in success while sustaining <strong>30&ndash;50&nbsp;Hz</strong> closed-loop control and reducing trajectory jerk by up to <strong>50&times;</strong>.
+          Across CALVIN, MetaWorld, Robomimic, and a real-robot suite (Unitree GO2 + D1 arm; UR-class tabletop), PRISM outperforms state-of-the-art diffusion policies by <strong>10&ndash;25%</strong> in success while sustaining <strong>30&ndash;50&nbsp;Hz</strong> closed-loop control and reducing trajectory jerk by up to <strong>50&times;</strong>.
         </p>
       </div>
     </div>
@@ -675,13 +669,12 @@
   </div>
 </section>
 
-<!-- VIDEOS — section 1 -->
 <section id="videos" class="reveal">
   <div class="container">
     <div class="section-head">
-      <span class="section-num">§ 01 &nbsp;/&nbsp; Real-World</span>
+      <span class="section-num">&sect; 01 &nbsp;/&nbsp; Real-World</span>
       <h2 class="section-title">Language &amp; audio &mdash; <em>vision-conditioned</em> manipulation.</h2>
-      <p class="section-blurb">Four tabletop tasks executed by MIRROR on a fixed-base manipulator. The policy fuses a frozen CLIP text embedding and contact-microphone audio with the visual context stream, attending to color, shape, and spatial descriptors to select the correct object and grasp.</p>
+      <p class="section-blurb">Four tabletop tasks executed by PRISM on a fixed-base manipulator. The policy fuses a frozen CLIP text embedding and contact-microphone audio with the visual context stream, attending to color, shape, and spatial descriptors to select the correct object and grasp.</p>
     </div>
 
     <div class="video-grid cols-2">
@@ -694,9 +687,9 @@
             referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
         <div class="vmeta">
-          <div class="vtag"><span class="tag-dot d-rgb"></span>Real-world · Language-conditioned</div>
-          <h3>"Stack <em>blue cup</em> on green cup"</h3>
-          <div class="vdesc">Vertical stacking with color discrimination. 92 ± 4% success across 50 trials.</div>
+          <div class="vtag"><span class="tag-dot d-rgb"></span>Real-world &middot; Language-conditioned</div>
+          <h3>&ldquo;Stack <em>blue cup</em> on green cup&rdquo;</h3>
+          <div class="vdesc">Vertical stacking with color discrimination. 92 &plusmn; 4% success across 50 trials.</div>
           <div class="modality-pills">
             <span class="pill">RGB</span><span class="pill">Audio</span><span class="pill">Text</span><span class="pill">Proprio</span>
           </div>
@@ -711,9 +704,9 @@
             referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
         <div class="vmeta">
-          <div class="vtag"><span class="tag-dot d-text"></span>Real-world · Language-conditioned</div>
-          <h3>"Stack <em>yellow cup</em> on blue cup"</h3>
-          <div class="vdesc">Requires reordering from initial configuration. 88 ± 5% success.</div>
+          <div class="vtag"><span class="tag-dot d-text"></span>Real-world &middot; Language-conditioned</div>
+          <h3>&ldquo;Stack <em>yellow cup</em> on blue cup&rdquo;</h3>
+          <div class="vdesc">Requires reordering from initial configuration. 88 &plusmn; 5% success.</div>
           <div class="modality-pills">
             <span class="pill">RGB</span><span class="pill">Audio</span><span class="pill">Text</span><span class="pill">Proprio</span>
           </div>
@@ -728,9 +721,9 @@
             referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
         <div class="vmeta">
-          <div class="vtag"><span class="tag-dot d-audio"></span>Real-world · Language-conditioned</div>
-          <h3>"Put <em>green ball</em> in the green cup"</h3>
-          <div class="vdesc">Shape and color matching; grasp aperture must adapt to ball geometry. 84 ± 6%.</div>
+          <div class="vtag"><span class="tag-dot d-audio"></span>Real-world &middot; Language-conditioned</div>
+          <h3>&ldquo;Put <em>green ball</em> in the green cup&rdquo;</h3>
+          <div class="vdesc">Shape and color matching; grasp aperture must adapt to ball geometry. 84 &plusmn; 6%.</div>
           <div class="modality-pills">
             <span class="pill">RGB</span><span class="pill">Audio</span><span class="pill">Text</span><span class="pill">Proprio</span>
           </div>
@@ -745,9 +738,9 @@
             referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
         <div class="vmeta">
-          <div class="vtag"><span class="tag-dot d-prop"></span>Real-world · Language-conditioned</div>
-          <h3>"Hang the <em>green cup</em> on the hook"</h3>
-          <div class="vdesc">Precise spatial reasoning. 78 ± 7% success across 50 trials.</div>
+          <div class="vtag"><span class="tag-dot d-prop"></span>Real-world &middot; Language-conditioned</div>
+          <h3>&ldquo;Hang the <em>green cup</em> on the hook&rdquo;</h3>
+          <div class="vdesc">Precise spatial reasoning. 78 &plusmn; 7% success across 50 trials.</div>
           <div class="modality-pills">
             <span class="pill">RGB</span><span class="pill">Audio</span><span class="pill">Text</span><span class="pill">Proprio</span>
           </div>
@@ -758,13 +751,12 @@
   </div>
 </section>
 
-<!-- VIDEOS — section 2 -->
 <section class="reveal">
   <div class="container">
     <div class="section-head">
-      <span class="section-num">§ 02 &nbsp;/&nbsp; Loco-Manipulation</span>
+      <span class="section-num">&sect; 02 &nbsp;/&nbsp; Loco-Manipulation</span>
       <h2 class="section-title">Vision &amp; tactile <em>contact-rich</em> manipulation on a quadruped.</h2>
-      <p class="section-blurb">MIRROR running on a Unitree GO2 with a 7-DoF D1 arm. Tactile feedback from the gripper is fused with wrist and shoulder RGB at every timestep, enabling robust contact-rich behaviors that pure vision baselines fail to recover.</p>
+      <p class="section-blurb">PRISM running on a Unitree GO2 with a 7-DoF D1 arm. Tactile feedback from the gripper is fused with wrist and shoulder RGB at every timestep, enabling robust contact-rich behaviors that pure vision baselines fail to recover.</p>
     </div>
 
     <div class="video-grid cols-2">
@@ -777,9 +769,9 @@
             referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
         <div class="vmeta">
-          <div class="vtag"><span class="tag-dot d-tactile"></span>GO2 + D1 · Vision + Tactile</div>
+          <div class="vtag"><span class="tag-dot d-tactile"></span>GO2 + D1 &middot; Vision + Tactile</div>
           <h3>Multi-object <em>pick &amp; place</em></h3>
-          <div class="vdesc">Locomotion phase + grasp + transport + release. MIRROR scales from 15 to 35 demos with +30% success improvement.</div>
+          <div class="vdesc">Locomotion phase + grasp + transport + release. PRISM scales from 15 to 35 demos with +30% success improvement.</div>
           <div class="modality-pills">
             <span class="pill">Wrist RGB</span><span class="pill">Shoulder RGB</span><span class="pill">Tactile</span><span class="pill">Proprio</span>
           </div>
@@ -794,7 +786,7 @@
             referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
         <div class="vmeta">
-          <div class="vtag"><span class="tag-dot d-tactile"></span>GO2 + D1 · Vision + Tactile</div>
+          <div class="vtag"><span class="tag-dot d-tactile"></span>GO2 + D1 &middot; Vision + Tactile</div>
           <h3>High-precision <em>peg insertion</em></h3>
           <div class="vdesc">Tactile contact patterns critical for sub-mm alignment. +20% success vs. Diffusion Policy at matched demo count.</div>
           <div class="modality-pills">
@@ -807,13 +799,12 @@
   </div>
 </section>
 
-<!-- VIDEOS — section 3 -->
 <section class="reveal">
   <div class="container">
     <div class="section-head">
-      <span class="section-num">§ 03 &nbsp;/&nbsp; Pre-Manipulation</span>
+      <span class="section-num">&sect; 03 &nbsp;/&nbsp; Pre-Manipulation</span>
       <h2 class="section-title">Whole-body <em>parking</em> for a 14-DoF locomotion + manipulation policy.</h2>
-      <p class="section-blurb">Before contact-rich manipulation can begin, the GO2 base must reach a stable, kinematically reachable pose. MIRROR&rsquo;s 14-D action space (gripper + EE pose + base linear &amp; angular velocity) lets a single policy plan the approach end-to-end from RGB observations.</p>
+      <p class="section-blurb">Before contact-rich manipulation can begin, the GO2 base must reach a stable, kinematically reachable pose. PRISM&rsquo;s 14-D action space (gripper + EE pose + base linear &amp; angular velocity) lets a single policy plan the approach end-to-end from RGB observations.</p>
     </div>
 
     <div class="video-grid cols-2">
@@ -826,7 +817,7 @@
             referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
         <div class="vmeta">
-          <div class="vtag"><span class="tag-dot d-rgb"></span>GO2 + D1 · Locomotion phase</div>
+          <div class="vtag"><span class="tag-dot d-rgb"></span>GO2 + D1 &middot; Locomotion phase</div>
           <h3>Pre-manipulation <em>parking</em> &mdash; trial A</h3>
           <div class="vdesc">Approach phase with base locomotion: position the platform within reachable workspace before manipulation begins.</div>
           <div class="modality-pills">
@@ -843,7 +834,7 @@
             referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
         <div class="vmeta">
-          <div class="vtag"><span class="tag-dot d-rgb"></span>GO2 + D1 · Locomotion phase</div>
+          <div class="vtag"><span class="tag-dot d-rgb"></span>GO2 + D1 &middot; Locomotion phase</div>
           <h3>Pre-manipulation <em>parking</em> &mdash; trial B</h3>
           <div class="vdesc">Alternate initial pose; the receding-horizon controller replans every <code>T<sub>a</sub></code> steps using the ProxyScore smoothness rule.</div>
           <div class="modality-pills">
@@ -856,13 +847,12 @@
   </div>
 </section>
 
-<!-- VIDEOS — section 4 -->
 <section class="reveal">
   <div class="container">
     <div class="section-head">
-      <span class="section-num">§ 04 &nbsp;/&nbsp; Simulation</span>
+      <span class="section-num">&sect; 04 &nbsp;/&nbsp; Simulation</span>
       <h2 class="section-title">CALVIN benchmark &mdash; <em>six tasks</em> from a single trained policy.</h2>
-      <p class="section-blurb">Trained on only 10% of CALVIN Env&nbsp;D, MIRROR improves success by ~25% over diffusion and ~20% over flow matching while reducing motion jerk by ~20&times;. The reel below shows six representative long-horizon tasks executed in a single rollout strip.</p>
+      <p class="section-blurb">Trained on only 10% of CALVIN Env&nbsp;D, PRISM improves success by ~25% over diffusion and ~20% over flow matching while reducing motion jerk by ~20&times;. The reel below shows six representative long-horizon tasks executed in a single rollout strip.</p>
     </div>
 
     <div class="video-grid cols-1">
@@ -875,9 +865,9 @@
             referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
         <div class="vmeta">
-          <div class="vtag"><span class="tag-dot d-depth"></span>CALVIN (Env D · 10% data) · Simulation</div>
+          <div class="vtag"><span class="tag-dot d-depth"></span>CALVIN (Env D &middot; 10% data) &middot; Simulation</div>
           <h3>Long-horizon <em>multi-task</em> rollout</h3>
-          <div class="vdesc">Six representative tasks executed by a single MIRROR policy. Wrist + static RGB, depth, tactile, and proprioception are all fused per timestep. Jerk = 0.052, mode-switch rate = 0.101 &mdash; both substantially below diffusion and flow baselines.</div>
+          <div class="vdesc">Six representative tasks executed by a single PRISM policy. Wrist + static RGB, depth, tactile, and proprioception are all fused per timestep. Jerk = 0.052, mode-switch rate = 0.101 &mdash; both substantially below diffusion and flow baselines.</div>
           <div class="modality-pills">
             <span class="pill">Static RGB</span><span class="pill">Wrist RGB</span><span class="pill">Depth</span><span class="pill">Tactile</span><span class="pill">Proprio</span>
           </div>
@@ -891,16 +881,16 @@
 <section id="cite" class="reveal">
   <div class="container">
     <div class="section-head">
-      <span class="section-num">§ 05 &nbsp;/&nbsp; Citation</span>
-      <h2 class="section-title">If you find <em>MIRROR</em> useful, please cite.</h2>
+      <span class="section-num">&sect; 05 &nbsp;/&nbsp; Citation</span>
+      <h2 class="section-title">If you find <em>PRISM</em> useful, please cite.</h2>
     </div>
 
     <div class="bibtex">
       <button class="copy-btn" onclick="copyBibtex(this)">Copy</button>
-<pre id="bib">@inproceedings{bhaskar2026MIRROR,
-  title     = {{MIRROR}: Multisensory Implicit Rejection-sampled RObotic policy},
+<pre id="bib">@inproceedings{anonymous2026prism,
+  title     = {{PRISM}: Bridging Multimodality and Real-Time Control in Multisensory Policies},
   author    = {Anonymous},
-  booktitle = {},
+  booktitle = {Conference on Robot Learning (CoRL)},
   year      = {2026},
 }</pre>
     </div>
@@ -913,7 +903,7 @@
 
 <nav class="quicknav" aria-label="Quick navigation">
   <a href="#videos" title="Section 1">01</a>
-  <a href="#cite"   title="Cite">§</a>
+  <a href="#cite"   title="Cite">&sect;</a>
 </nav>
 
 <script>
