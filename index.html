@@ -608,37 +608,34 @@
   <div class="container">
     <div class="abstract">
       <aside>Abstract</aside>
-      <div>
-        <p>
-          Robotic imitation learning typically requires policies that capture <strong>multimodal action distributions</strong>, operate at real-time control rates, and accommodate multiple sensing modalities. Most generative approaches&mdash;diffusion, flow matching, IMLE&mdash;satisfy only a subset of these requirements.
-        </p>
-        <p>
-          We introduce <strong>PRISM</strong>, a single-pass policy built on a <em>batch-global</em> rejection-sampling variant of IMLE. PRISM couples a <strong>temporal multisensory encoder</strong> (RGB, depth, tactile, audio, proprioception) with a <strong>linear-attention generator</strong> built on the Performer architecture, generating full action sequences in one batched forward pass.
-        </p>
-        <p>
-          Across CALVIN, MetaWorld, Robomimic, and a real-robot suite (Unitree GO2 + D1 arm; UR-class tabletop), PRISM outperforms state-of-the-art diffusion policies by <strong>10&ndash;25%</strong> in success while sustaining <strong>30&ndash;50&nbsp;Hz</strong> closed-loop control and reducing trajectory jerk by up to <strong>50&times;</strong>.
-        </p>
-      </div>
-    </div>
+        <div>
+          <p>
+            Robotic imitation learning typically requires policies that capture <strong>multimodal action distributions</strong>, run at real-time control rates, and accommodate multiple sensing modalities. Recent generative approaches&mdash;diffusion, flow matching, IMLE&mdash;each satisfy a subset of these requirements but not all three.
+          </p>
+          <p>
+            We present <strong>PRISM</strong>, a single-pass multisensory policy that meets all three by operationalizing a <em>batch-global</em> variant of RS&ndash;IMLE. A key technical observation: the RS&ndash;IMLE rejection mechanism, designed for few-shot image synthesis, silently fails at policy-scale batch sizes. We identify why and provide the calibration that restores it.
+          </p>
+          <p>
+            On real-world loco-manipulation (Unitree GO2 + 7-DoF arm) and tabletop manipulation (UR5), PRISM outperforms diffusion policies by <strong>10&ndash;25 pp</strong> in success while sustaining <strong>30&ndash;50&nbsp;Hz</strong> closed-loop control. On <strong>CALVIN (full ABCD, language-conditioned)</strong>, it improves success by <strong>~31 pp</strong> over diffusion and <strong>~24 pp</strong> over flow matching while reducing trajectory jerk by <strong>20&times;&ndash;70&times;</strong>.
+          </p>
+        </div>
 
-    <div class="stats">
       <div class="stat">
-        <div class="stat-num"><em>+25%</em></div>
-        <div class="stat-label">Success vs. Diffusion (CALVIN, 10% data)</div>
+        <div class="stat-num"><em>+31pp</em></div>
+        <div class="stat-label">Success vs. Diffusion (CALVIN, full ABCD)</div>
       </div>
       <div class="stat">
-        <div class="stat-num">50<em>&times;</em></div>
-        <div class="stat-label">Lower trajectory jerk</div>
+        <div class="stat-num">70<em>&times;</em></div>
+        <div class="stat-label">Lower trajectory jerk (vs. Diffusion)</div>
       </div>
       <div class="stat">
         <div class="stat-num">50&nbsp;<em>Hz</em></div>
-        <div class="stat-label">Real-robot control rate</div>
+        <div class="stat-label">Real-robot closed-loop control</div>
       </div>
       <div class="stat">
         <div class="stat-num">1<em>-pass</em></div>
         <div class="stat-label">Single-step inference (NFE = 1)</div>
       </div>
-    </div>
 
     <div class="method-strip" aria-label="modalities">
       <div class="mod-cell">
@@ -851,25 +848,26 @@
   <div class="container">
     <div class="section-head">
       <span class="section-num">&sect; 04 &nbsp;/&nbsp; Simulation</span>
-      <h2 class="section-title">CALVIN benchmark &mdash; <em>six tasks</em> from a single trained policy.</h2>
-      <p class="section-blurb">Trained on only 10% of CALVIN Env&nbsp;D, PRISM improves success by ~25% over diffusion and ~20% over flow matching while reducing motion jerk by ~20&times;. The reel below shows six representative long-horizon tasks executed in a single rollout strip.</p>
+      <h2 class="section-title">CALVIN benchmark &mdash; <em>full ABCD</em>, language-conditioned.</h2>
+      <p class="section-blurb">Trained on the full CALVIN ABCD split with language annotations, PRISM improves success by ~31&nbsp;pp over Diffusion Policy and ~24&nbsp;pp over Flow Matching, while reducing trajectory jerk by 20&times;&ndash;70&times;. The reel below shows representative long-horizon language-conditioned tasks executed by a single trained policy.</p>
     </div>
+
 
     <div class="video-grid cols-1">
 
       <div class="vcard">
         <div class="vmedia">
           <img src="https://raw.githubusercontent.com/anonymous227111-png/anonymous227111-png.github.io/main/calvin.gif"
-               alt="CALVIN six-task rollout reel"
+               alt="CALVIN ABCD long-horizon rollout"
                loading="lazy"
                style="position:absolute; inset:0; width:100%; height:100%; object-fit:cover; display:block;">
         </div>
         <div class="vmeta">
-          <div class="vtag"><span class="tag-dot d-depth"></span>CALVIN (Env D &middot; 10% data) &middot; Simulation</div>
-          <h3>Long-horizon <em>multi-task</em> rollout</h3>
-          <div class="vdesc">Six representative tasks executed by a single PRISM policy. Wrist + static RGB, depth, tactile, and proprioception are all fused per timestep. Jerk = 0.052, mode-switch rate = 0.101 &mdash; both substantially below diffusion and flow baselines.</div>
+          <div class="vtag"><span class="tag-dot d-depth"></span>CALVIN (full ABCD &middot; language-conditioned) &middot; Simulation</div>
+          <h3>Long-horizon <em>language-conditioned</em> rollout</h3>
+          <div class="vdesc">Six representative tasks executed by a single PRISM policy trained on the full CALVIN ABCD split with language annotations. Wrist + static RGB, depth, tactile, and proprioception are fused per timestep. PRISM improves success by ~31 pp over Diffusion Policy and ~24 pp over Flow Matching, while reducing trajectory jerk by 20&times;&ndash;70&times;.</div>
           <div class="modality-pills">
-            <span class="pill">Static RGB</span><span class="pill">Wrist RGB</span><span class="pill">Depth</span><span class="pill">Tactile</span><span class="pill">Proprio</span>
+            <span class="pill">Static RGB</span><span class="pill">Wrist RGB</span><span class="pill">Depth</span><span class="pill">Tactile</span><span class="pill">Proprio</span><span class="pill">Language</span>
           </div>
         </div>
       </div>
