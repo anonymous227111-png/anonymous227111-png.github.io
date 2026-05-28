@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PRISM — Pipeline Animation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Bricolage+Grotesque:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F5EFE3; --deep:#EBE2CF; --card:#FBF7EE;
+    --ink:#1A1815; --soft:#4A453C; --faint:#8B8579; --rule:rgba(26,24,21,.14);
+    --red:#C8553D; --amber:#E0A04A; --yellow:#C9B85A; --green:#6B8F5C;
+    --teal:#4A8B8C; --blue:#3E6B9A; --violet:#6E5494; --rose:#A36B82;
+    --serif:'Instrument Serif',Georgia,serif;
+    --sans:'Bricolage Grotesque',system-ui,sans-serif;
+    --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;} html,body{margin:0;}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);
+    display:flex;align-items:center;justify-content:center;min-height:100vh;padding:2rem;}
+  .stage{width:100%;max-width:1180px;aspect-ratio:1280/720;position:relative;
+    background:var(--paper);border:.5px solid var(--rule);border-radius:6px;overflow:hidden;
+    box-shadow:0 18px 50px -28px rgba(26,24,21,.45);}
+  .spectrum{position:absolute;top:0;left:0;right:0;height:3px;z-index:5;
+    background:linear-gradient(90deg,var(--red),var(--amber),var(--yellow),var(--green),var(--teal),var(--blue),var(--violet));}
+  svg.canvas{width:100%;height:100%;display:block;}
+  text{font-family:var(--mono);fill:var(--soft);font-size:16px;}
+  .lbl{font-family:var(--sans);fill:var(--soft);font-size:16px;}
+  .lblsm{font-family:var(--mono);fill:var(--faint);font-size:14px;letter-spacing:.04em;}
+  .ttl{font-family:var(--serif);font-style:italic;fill:var(--ink);}
+  .eqn{font-family:var(--mono);fill:var(--ink);font-size:22px;}
+  .gloss{font-family:var(--serif);font-style:italic;fill:var(--soft);font-size:21px;}
+  .actNum{position:absolute;top:18px;left:22px;z-index:5;font-family:var(--mono);
+    font-size:13px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);}
+  .brand{position:absolute;top:14px;right:22px;z-index:5;font-family:var(--serif);
+    font-style:italic;font-size:23px;color:var(--ink);}
+  .brand b{font-style:normal;}
+  .caption{position:absolute;bottom:30px;left:0;right:0;text-align:center;z-index:5;
+    font-family:var(--serif);font-style:italic;font-size:19px;line-height:1.32;color:var(--ink-soft,#4A453C);
+    transition:opacity .45s ease;pointer-events:none;padding:0 90px;max-width:980px;margin:0 auto;}
+  .rail{position:absolute;bottom:14px;left:0;right:0;z-index:6;display:flex;gap:8px;justify-content:center;}
+  .rail span{width:30px;height:3px;border-radius:2px;background:var(--faint);opacity:.25;cursor:pointer;
+    transition:opacity .35s,background .35s;}
+  .rail span:hover{opacity:.6;}
+  .rail span.on{opacity:1;background:var(--ink);}
+  .nav{position:absolute;top:50%;transform:translateY(-50%);z-index:6;width:42px;height:42px;border-radius:50%;
+    border:1px solid var(--rule);background:rgba(251,247,238,.78);backdrop-filter:blur(4px);color:var(--ink);
+    display:flex;align-items:center;justify-content:center;cursor:pointer;font-family:var(--mono);
+    font-size:20px;line-height:1;padding:0 0 2px;transition:all .18s;}
+  .nav:hover{background:var(--ink);color:var(--paper);}
+  .nav.prev{left:16px;} .nav.next{right:16px;}
+  .nav[disabled]{opacity:.2;pointer-events:none;}
+  .replay{position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:6;
+    font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--faint);
+    background:rgba(251,247,238,.6);border:1px solid var(--rule);border-radius:20px;padding:5px 12px;
+    cursor:pointer;transition:all .18s;}
+  .replay:hover{color:var(--ink);border-color:var(--ink);}
+  .hint{position:absolute;bottom:13px;right:18px;z-index:6;font-family:var(--mono);font-size:10px;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--faint);opacity:.65;pointer-events:none;}
+</style>
+</head>
+<body>
+  <div class="stage" id="stage">
+    <div class="spectrum"></div>
+    <div class="actNum" id="actNum"></div>
+    <div class="brand"><b>PRISM</b> pipeline</div>
+    <svg class="canvas" id="cv" viewBox="0 0 1280 720" preserveAspectRatio="xMidYMid meet">
+      <defs>
+        <marker id="ar" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 Z" fill="#4A453C"/></marker>
+        <marker id="arV" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 Z" fill="#6E5494"/></marker>
+        <marker id="arG" markerWidth="9" markerHeight="9" refX="6" refY="3" orient="auto">
+          <path d="M0,0 L6,3 L0,6 Z" fill="#6B8F5C"/></marker>
+      </defs>
+      <g id="bg"></g>
+      <g id="act0"></g><g id="act1"></g><g id="act2"></g>
+      <g id="act3"></g><g id="act4"></g><g id="act5"></g>
+    </svg>
+    <div class="caption" id="caption"></div>
+    <div class="rail" id="rail"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <button class="nav prev" id="prev" aria-label="Previous step">&#8249;</button>
+    <button class="nav next" id="next" aria-label="Next step">&#8250;</button>
+    <button class="replay" id="replay">&#8635; replay step</button>
+    <div class="hint" id="hint">scroll · arrows · click</div>
+  </div>
+<script>
+(function(){
+  "use strict";
+  const NS="http://www.w3.org/2000/svg";
+  const P={red:"#C8553D",amber:"#E0A04A",yellow:"#C9B85A",green:"#6B8F5C",teal:"#4A8B8C",
+    blue:"#3E6B9A",violet:"#6E5494",rose:"#A36B82",ink:"#1A1815",soft:"#4A453C",
+    faint:"#8B8579",card:"#FBF7EE",deep:"#EBE2CF",rule:"rgba(26,24,21,.14)"};
+  const CYC=["red","amber","green","teal","blue","violet","rose","yellow"].map(k=>P[k]);
+
+  // ---- svg helpers ----
+  function el(t,a={},pa=null){const e=document.createElementNS(NS,t);
+    for(const k in a)e.setAttribute(k,a[k]); if(pa)pa.appendChild(e); return e;}
+  function clear(g){while(g.firstChild)g.removeChild(g.firstChild);}
+  function txt(pa,x,y,s,cls="",an="start",ex={}){const t=el("text",Object.assign({x,y,"text-anchor":an},ex),pa);
+    t.setAttribute("class",cls); t.textContent=s; return t;}
+  function curve(pts){let d=`M ${pts[0][0]} ${pts[0][1]}`;
+    for(let i=1;i<pts.length;i++){const a=pts[i-1],b=pts[i],mx=(a[0]+b[0])/2;
+      d+=` C ${mx} ${a[1]}, ${mx} ${b[1]}, ${b[0]} ${b[1]}`;} return d;}
+
+  // ---- timeline ----
+  let timers=[],anims=[],stale=false,gen=0;
+  function after(ms,fn){timers.push(setTimeout(()=>{if(!stale)fn();},ms));}
+  function clearTimers(){timers.forEach(clearTimeout);timers=[];}
+  function A(n,f,o){const a=n.animate(f,Object.assign({fill:"forwards"},o));anims.push(a);return a;}
+  function clearAnims(){anims.forEach(a=>{try{a.cancel();}catch(e){}});anims=[];}
+  function drawOn(p,dur,delay=0,ease="cubic-bezier(.4,0,.2,1)"){
+    const L=p.getTotalLength(); p.style.strokeDasharray=L; p.style.strokeDashoffset=L; p.style.opacity=1;
+    return A(p,[{strokeDashoffset:L},{strokeDashoffset:0}],{duration:dur,delay,easing:ease});}
+  function fade(n,a,b,dur,delay=0){return A(n,[{opacity:a},{opacity:b}],{duration:dur,delay,easing:"ease"});}
+  function pop(n,dur,delay=0){n.style.transformBox="fill-box";n.style.transformOrigin="center";
+    return A(n,[{opacity:0,transform:"scale(.3)"},{opacity:1,transform:"scale(1)"}],
+      {duration:dur,delay,easing:"cubic-bezier(.34,1.56,.64,1)"});}
+  function moveTo(n,cxFrom,cyFrom,cxTo,cyTo,dur,delay=0){ // for circles
+    return A(n,[{cx:cxFrom,cy:cyFrom},{cx:cxTo,cy:cyTo}],{duration:dur,delay,easing:"cubic-bezier(.4,0,.2,1)"});}
+
+  // ---- equation builder (term-by-term, measurable, highlightable) ----
+  function buildEqn(pa,x,y,parts,size){
+    let cx=x; const nodes=[];
+    parts.forEach(p=>{
+      const n=txt(pa,cx,y,p.t,"eqn","start",{"font-size":size, fill:p.c||P.ink});
+      n.style.opacity=0;
+      let w; try{w=n.getComputedTextLength();}catch(e){w=p.t.length*size*0.56;}
+      n.__w=w; n.__base=p.c||P.ink;
+      cx += w + (p.pad!=null?p.pad:4);
+      nodes.push(n);
+    });
+    return nodes;
+  }
+  function showEqn(nodes,idxs,delay=0,step=70){idxs.forEach((i,n)=>fade(nodes[i],0,1,360,delay+n*step));}
+  function pulseEqn(node,delay=0,col){
+    if(!node)return;
+    node.style.transformBox="fill-box"; node.style.transformOrigin="center";
+    A(node,[{transform:"scale(1)"},{transform:"scale(1.28)"},{transform:"scale(1)"}],{duration:680,delay});
+    if(col)A(node,[{fill:node.__base},{fill:col},{fill:node.__base}],{duration:680,delay});
+  }
+
+  // mini neural net: columns of nodes + edges
+  function miniNet(pa,x,y,w,h,layers,color){
+    const cols=layers.length, cg = cols>1? w/(cols-1):0, pts=[];
+    layers.forEach((nc,ci)=>{const colX=x+ci*cg, rg=h/(nc+1), col=[];
+      for(let r=0;r<nc;r++)col.push([colX,y+rg*(r+1)]); pts.push(col);});
+    for(let ci=0;ci<cols-1;ci++)pts[ci].forEach(a=>pts[ci+1].forEach(b=>
+      el("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:color||P.faint,"stroke-width":0.4,opacity:0.3},pa)));
+    const ns=[]; pts.flat().forEach(p=>ns.push(el("circle",{cx:p[0],cy:p[1],r:3,fill:color||P.soft,opacity:0.9},pa)));
+    return {pts,nodes:ns};
+  }
+  function starPath(cx,cy,r){let p="";for(let i=0;i<10;i++){const a=Math.PI/5*i-Math.PI/2;
+    const rr=i%2?r*.45:r; p+=(i?"L":"M")+(cx+Math.cos(a)*rr)+" "+(cy+Math.sin(a)*rr)+" ";} return p+"Z";}
+  function dist(a,b){return Math.hypot(a[0]-b[0],a[1]-b[1]);}
+
+  const groups=[0,1,2,3,4,5].map(i=>document.getElementById("act"+i));
+  const actNum=document.getElementById("actNum");
+  const caption=document.getElementById("caption");
+  const rail=[...document.querySelectorAll("#rail span")];
+  (function(){const g=document.getElementById("bg");
+    for(let x=40;x<1280;x+=40)for(let y=64;y<600;y+=40)
+      el("circle",{cx:x,cy:y,r:0.8,fill:P.ink,opacity:0.045},g);})();
+
+  // zones: main 140-470, equation y=512, gloss y=548
+  const EQY=512, GLY=548;
+
+  // ============================================================ ACT 1 — ENCODER
+  function act1(){
+    const g=groups[0]; clear(g);
+    txt(g,70,118,"one observation timestep t — each modality has its own encoder, then fused","lblsm");
+    const mods=[
+      {n:"wrist rgb",c:P.blue,  glyph:"img"},
+      {n:"depth",    c:P.amber, glyph:"img"},
+      {n:"tactile",  c:P.red,   glyph:"dots"},
+      {n:"proprio",  c:P.violet,glyph:"wave"},
+    ];
+    const rowY=[160,230,300,370], thW=58, thX=120;
+    // input thumbnails + per-modality mini nets + embedding dot
+    const embPts=[];
+    mods.forEach((m,r)=>{
+      const y=rowY[r];
+      txt(g,108,y+24,m.n,"lbl","end");
+      const card=el("rect",{x:thX,y:y,width:thW,height:42,rx:3,fill:P.card,stroke:m.c,"stroke-width":1.1,opacity:0},g);
+      // glyph
+      if(m.glyph==="img"){el("rect",{x:thX+8,y:y+9,width:thW-16,height:24,rx:2,fill:m.c,opacity:.3},g);
+        el("rect",{x:thX+12,y:y+14,width:14,height:9,fill:m.c,opacity:.55},g);}
+      else if(m.glyph==="dots"){[0,1,2].forEach(i=>el("circle",{cx:thX+18+i*12,cy:y+21,r:3+i,fill:m.c,opacity:.6},g));}
+      else {el("polyline",{points:`${thX+8},${y+28} ${thX+18},${y+16} ${thX+28},${y+30} ${thX+38},${y+18} ${thX+50},${y+26}`,
+        fill:"none",stroke:m.c,"stroke-width":1.3,opacity:.7},g);}
+      fade(card,0,1,400,r*120);
+      // mini net
+      const net=miniNet(g, thX+78, y-4, 70, 50, [2,3,1], m.c);
+      net.nodes.forEach(nd=>{nd.style.opacity=0; fade(nd,0,.9,300,r*120+250);});
+      // embedding dot v^m
+      const ex=thX+78+70+18, ey=y+21;
+      const emb=el("circle",{cx:ex,cy:ey,r:6,fill:m.c,opacity:0},g);
+      txt(g,ex,ey-12,"v"+(r+1),"lblsm","middle");
+      embPts.push({x:ex,y:ey,c:m.c,node:emb});
+      after(r*120+520,()=>{pop(emb,360);fade(emb,0,1,250);});
+      // input line thumbnail->net
+      const ln=el("line",{x1:thX+thW,y1:y+21,x2:thX+78,y2:y+21,stroke:m.c,"stroke-width":1,opacity:0},g);
+      fade(ln,0,.5,300,r*120+200);
+    });
+
+    // fusion box (concat + MLP)
+    const fx=430, fyc=265, fbw=110, fbh=120;
+    const fbox=el("rect",{x:fx,y:fyc-fbh/2,width:fbw,height:fbh,rx:6,fill:P.deep,stroke:P.rule,"stroke-width":1,opacity:0},g);
+    fade(fbox,0,1,500,400);
+    txt(g,fx+fbw/2,fyc-8,"concat","ttl","middle",{"font-size":"17"});
+    txt(g,fx+fbw/2,fyc+16,"+ MLP","ttl","middle",{"font-size":"17"});
+
+    // converging lines emb -> fusion
+    after(900,()=>{
+      embPts.forEach((e,i)=>{
+        const ln=el("path",{d:curve([[e.x+8,e.y],[(e.x+fx)/2,fyc],[fx,fyc]]),
+          fill:"none",stroke:e.c,"stroke-width":1.4,opacity:0},g);
+        drawOn(ln,450,i*70); fade(ln,0,.7,200,i*70);
+      });
+    });
+
+    // context token c_t emerges, flies to C column
+    const ctxX=720, ctxY=[160,216,272,328];
+    txt(g,ctxX+17,140,"context C","lblsm","middle");
+    const slots=ctxY.map((ty,i)=>{const s=el("rect",{x:ctxX,y:ty,width:34,height:34,rx:3,fill:"none",stroke:P.rule,"stroke-width":1,opacity:.5},g);
+      txt(g,ctxX+46,ty+23,"c"+(i+1),"lblsm","start"); return {x:ctxX,y:ty};});
+
+    function makeToken(x,y){const t=el("g",{},g);
+      el("rect",{x,y,width:34,height:34,rx:3,fill:P.ink},t);
+      for(let s=0;s<4;s++)el("rect",{x:x+5+s*7,y:y+5,width:5,height:24,rx:1,fill:CYC[s],opacity:.9},t);
+      return t;}
+
+    // t=1 fully
+    after(1700,()=>{
+      const tok=makeToken(fx+fbw+20, fyc-17); tok.style.opacity=0;
+      pop(tok,420); fade(tok,0,1,250);
+      const ln=el("line",{x1:fx+fbw,y1:fyc,x2:fx+fbw+20,y2:fyc,stroke:P.ink,"stroke-width":1.2,opacity:0},g);
+      fade(ln,0,.6,250);
+      // fly to C slot 1
+      after(650,()=>{
+        A(tok,[{transform:"translate(0,0)"},{transform:`translate(${slots[0].x-(fx+fbw+20)}px,${slots[0].y-(fyc-17)}px)`}],
+          {duration:700,easing:"cubic-bezier(.4,0,.2,1)"});
+      });
+    });
+    // t=2..4 quick
+    [2,3,4].forEach((t,idx)=>{
+      after(2700+idx*520,()=>{
+        A(fbox,[{},{filter:"brightness(1.1)"},{}],{duration:400});
+        const tok=makeToken(slots[t-1].x,slots[t-1].y); tok.style.opacity=0;
+        pop(tok,360); fade(tok,0,1,220);
+      });
+    });
+
+    // equation, built + highlighted in sync
+    const eq=buildEqn(g,70,EQY,[
+      {t:"cₜ",c:P.ink},{t:"="},{t:"MLP"},{t:"( ["},
+      {t:"v₁",c:P.blue},{t:","},{t:"v₂",c:P.amber},{t:","},
+      {t:"v₃",c:P.red},{t:","},{t:"v₄",c:P.violet},{t:"] )"}
+    ],22);
+    // reveal modality terms as embeddings appear (~520ms each)
+    showEqn(eq,[3],300);
+    [4,6,8,10].forEach((ix,r)=> after(520+r*120,()=>{showEqn(eq,[ix],0); pulseEqn(eq[ix],120,eq[ix].__base);}));
+    [5,7,9,11].forEach((ix)=> showEqn(eq,[ix],900));
+    after(1900,()=>{showEqn(eq,[0,1,2],0); pulseEqn(eq[0],200,P.ink);});
+    const gl=txt(g,70,GLY,"each sensor → its own encoder → embedding; concatenated and fused into one token cₜ","gloss");
+    gl.style.opacity=0; fade(gl,0,1,500,1600);
+  }
+
+  // ============================================================ ACT 2 — GENERATOR
+  function act2(){
+    const g=groups[1]; clear(g);
+    txt(g,70,118,"context tokens + a latent are decoded into a full trajectory in one pass","lblsm");
+
+    // left: context C (4 tokens) and latent z
+    const cX=80;
+    txt(g,cX+17,150,"C","lblsm","middle");
+    for(let i=0;i<4;i++){const ty=165+i*42;
+      const t=el("g",{},g); el("rect",{x:cX,y:ty,width:34,height:34,rx:3,fill:P.ink},t);
+      for(let s=0;s<4;s++)el("rect",{x:cX+5+s*7,y:ty+5,width:5,height:24,rx:1,fill:CYC[s],opacity:.9},t);
+      t.style.opacity=0; pop(t,360,i*70); fade(t,0,1,250,i*70);}
+    txt(g,cX+17,378,"z ~ 𝒩(0,I)","lblsm","middle");
+    const zc=el("circle",{cx:cX+17,cy:400,r:9,fill:P.rose,opacity:0},g); pop(zc,400,400); fade(zc,0,.85,300,400);
+
+    // center: transformer block w/ attention
+    const bx=210,by=150,bw=360,bh=250;
+    const blk=el("rect",{x:bx,y:by,width:bw,height:bh,rx:8,fill:P.deep,stroke:P.rule,"stroke-width":1,opacity:0},g);
+    fade(blk,0,1,500,200);
+    txt(g,bx+bw/2,by+30,"Performer block","ttl","middle",{"font-size":"23"});
+    // query token row
+    const qy=by+72, qN=6, qX0=bx+44;
+    const qNodes=[];
+    txt(g,bx+20,qy-16,"action queries","lblsm");
+    for(let q=0;q<qN;q++){const qx=qX0+q*48;
+      const r=el("rect",{x:qx,y:qy,width:32,height:26,rx:3,fill:P.card,stroke:P.violet,"stroke-width":1.1,opacity:0},g);
+      qNodes.push([qx+16,qy+13]); pop(r,340,700+q*60);}
+    // self-attention arcs among queries
+    after(1200,()=>{
+      for(let i=0;i<qN-1;i++){const a=qNodes[i],b=qNodes[i+1];
+        const arc=el("path",{d:`M ${a[0]} ${a[1]-4} Q ${(a[0]+b[0])/2} ${qy-26} ${b[0]} ${b[1]-4}`,
+          fill:"none",stroke:P.violet,"stroke-width":1,opacity:0},g);
+        drawOn(arc,400,i*60); fade(arc,0,.5,200,i*60);}
+      txt(g,bx+bw/2,qy+50,"bidirectional self-attention","lblsm","middle");
+    });
+    // cross-attention lines from C to queries
+    after(700,()=>{ for(let i=0;i<4;i++){const ln=el("path",{d:curve([[cX+34,165+i*42+17],[170,by+120],[bx,by+120]]),
+        fill:"none",stroke:P.faint,"stroke-width":1,opacity:0},g); drawOn(ln,500,i*60); fade(ln,0,.4,200,i*60);} });
+
+    // FAVOR+ inset
+    const fy=by+160;
+    txt(g,bx+bw/2,fy,"FAVOR⁺ linear attention","lblsm","middle");
+    const favParts=buildEqn(g, bx+24, fy+30, [
+      {t:"softmax(QKᵀ)V",c:P.soft},{t:" ≈ "},{t:"φ(Q)",c:P.teal},{t:"·"},{t:"(φ(K)ᵀ",c:P.teal},{t:"V)",c:P.teal}
+    ],18);
+    showEqn(favParts,[0],1400); showEqn(favParts,[1,2,3,4,5],1900);
+    const fav2=txt(g,bx+bw/2,fy+54,"𝒪(L²) → 𝒪(L)  ·  linear in horizon","lblsm","middle");
+    fav2.style.opacity=0; fade(fav2,0,1,500,2300);
+
+    // right: K candidate trajectories
+    const ox=640,oyc=275;
+    txt(g,ox+110,150,"K = 8 candidate trajectories","lblsm","middle");
+    const cands=[];
+    for(let k=0;k<8;k++){const sp=k-3.5;
+      const pts=[[ox,oyc],[ox+70,oyc+sp*7],[ox+150,oyc+sp*18+Math.sin(k)*8],[ox+230,oyc+sp*28]];
+      const p=el("path",{d:curve(pts),fill:"none",stroke:CYC[k%CYC.length],"stroke-width":1.7,opacity:0,"stroke-linecap":"round"},g);
+      cands.push(p);}
+    after(1900,()=>cands.forEach((p,k)=>{drawOn(p,800,k*70); fade(p,0,.92,300,k*70);}));
+    // bracket arrow block->candidates
+    after(1800,()=>{const a=el("line",{x1:bx+bw,y1:by+bh/2,x2:ox-8,y2:oyc,stroke:P.soft,"stroke-width":1.2,opacity:0,"marker-end":"url(#ar)"},g);
+      drawOn(a,400); fade(a,0,.6,200);});
+
+    // equation
+    const eq=buildEqn(g,70,EQY,[
+      {t:"Â⁽ᵏ⁾",c:P.violet},{t:"="},{t:"G_θ"},{t:"("},{t:"C",c:P.ink},{t:","},{t:"z_k",c:P.rose},{t:")"},
+      {t:"   k = 1 … K",c:P.faint,pad:0}
+    ],22);
+    showEqn(eq,[0,1,2,3],600);
+    after(900,()=>{showEqn(eq,[4],0);pulseEqn(eq[4],100,P.ink);});
+    after(1100,()=>{showEqn(eq,[5,6,7],0);pulseEqn(eq[6],150,P.rose);});
+    showEqn(eq,[8],2000);
+    const gl=txt(g,70,GLY,"learned query tokens attend to context and a latent — all K trajectories from one forward pass","gloss");
+    gl.style.opacity=0; fade(gl,0,1,500,1700);
+  }
+
+  // ============================================================ ACT 3 — IMLE PRINCIPLE
+  function act3(){
+    const g=groups[2]; clear(g);
+    txt(g,70,118,"IMLE flips GAN matching: for EVERY demo, guarantee a nearby generated sample","lblsm");
+
+    // action-space panel
+    const px=120,py=148,pw=560,ph=300;
+    el("rect",{x:px,y:py,width:pw,height:ph,rx:6,fill:P.card,stroke:P.rule,"stroke-width":1},g);
+    txt(g,px+12,py+18,"action space  (modes of the demonstrations)","lblsm");
+
+    // generator on right emitting samples
+    const gnx=740,gny=290;
+    const net=miniNet(g,gnx,gny-58,110,118,[1,4,5,3],P.violet);
+    net.nodes.forEach(n=>{n.style.opacity=0;fade(n,0,.9,400,150);});
+    txt(g,gnx+55,gny-70,"G_θ","ttl","middle",{"font-size":"22"});
+    txt(g,gnx+55,gny+76,"z ~ 𝒩(0,I)","lblsm","middle");
+
+    // three demonstration modes (clusters): bright star + faint companions
+    const modes=[[250,215],[420,365],[600,235]];
+    modes.forEach((d,i)=>{
+      // faint companions
+      [[18,-14],[-16,16]].forEach(o=>el("circle",{cx:d[0]+o[0],cy:d[1]+o[1],r:4,fill:P.ink,opacity:.18},g));
+      const s=el("path",{d:starPath(d[0],d[1],11),fill:P.ink,opacity:0},g);
+      pop(s,420,300+i*160); fade(s,0,1,300,300+i*160);
+      txt(g,d[0]+16,d[1]-12,"mode "+(i+1),"lblsm");
+    });
+
+    // generated samples — placed so each mode has a near one; plus one stray
+    const spos=[[300,182],[210,250],[455,335],[372,392],[560,272],[640,202],
+                [338,300],[498,182],[470,300],[648,420]];
+    const strayIdx=9;
+    const samples=[];
+    after(900,()=>{
+      spos.forEach((s,k)=>{
+        const dot=el("circle",{cx:gnx+55,cy:gny,r:5,fill:CYC[k%CYC.length],opacity:0},g);
+        fade(dot,0,.9,200,k*70); moveTo(dot,gnx+55,gny,s[0],s[1],700,k*70);
+        samples.push({node:dot,x:s[0],y:s[1],k});
+      });
+    });
+
+    // equation
+    const eq=buildEqn(g,70,EQY,[
+      {t:"ℒ_IMLE",c:P.violet},{t:"="},{t:"𝔼_{a∼data}"},{t:"[ "},
+      {t:"min_k",c:P.red},{t:" D("},{t:"a",c:P.ink},{t:", G_θ(z_k)",c:P.teal},{t:") ]"}
+    ],22);
+    showEqn(eq,[0,1,2,3],700); showEqn(eq,[7],1700);
+
+    // for each mode: nearest sample -> arrow (min_k) -> pull in (D)
+    after(2200,()=>{
+      showEqn(eq,[4,5,6,8],0);
+      modes.forEach((d,di)=>{
+        after(di*820,()=>{
+          let best=null,bd=1e9;
+          samples.forEach(s=>{const dd=dist([s.x,s.y],d); if(dd<bd){bd=dd;best=s;}});
+          if(!best)return;
+          const line=el("line",{x1:best.x,y1:best.y,x2:d[0],y2:d[1],stroke:P.red,"stroke-width":1.5,
+            "stroke-dasharray":"4 3",opacity:0,"marker-end":"url(#ar)"},g);
+          fade(line,0,.9,300); pulseEqn(eq[4],0,P.red);
+          after(480,()=>{
+            pulseEqn(eq[5],0,P.teal);
+            const nx=best.x+(d[0]-best.x)*.6, ny=best.y+(d[1]-best.y)*.6;
+            moveTo(best.node,best.x,best.y,nx,ny,800);
+            A(best.node,[{r:5},{r:7}],{duration:800});
+            A(line,[{x1:best.x,y1:best.y},{x1:nx,y1:ny}],{duration:800});
+          });
+        });
+      });
+    });
+    // stray sample stays unselected — annotate
+    after(5000,()=>{
+      const s=samples[strayIdx];
+      if(s){A(s.node,[{},{r:8},{r:5}],{duration:600}); fade(s.node,.9,.4,600);
+        const t=txt(g,s.x+12,s.y+4,"unselected — not penalized","lblsm","start",{fill:P.faint}); t.style.opacity=0; fade(t,0,1,400);}
+    });
+
+    const gl=txt(g,70,GLY,"matching runs data → nearest sample, so no mode can be dropped; far samples are simply never selected","gloss");
+    gl.style.opacity=0; fade(gl,0,1,500,2400);
+  }
+
+  // ============================================================ ACT 4 — BATCH-GLOBAL REJECTION  (rebuilt; your alignment style)
+  function act4(){
+    const g=groups[3]; clear(g);
+    txt(g,70,118,"batch-global rejection — test each candidate against every OTHER example's target","lblsm");
+
+    // shared action-space panel
+    const px=150,py=150,pw=470,ph=300;
+    el("rect",{x:px,y:py,width:pw,height:ph,rx:6,fill:P.card,stroke:P.rule,"stroke-width":1},g);
+    txt(g,px+14,py+22,"shared action space","lblsm");
+
+    const EPS=50;
+    // three examples in the minibatch; example 1 is the focal one
+    const ex=[
+      {c:P.blue,   t:[300,235], name:"A₁  (this example)"},
+      {c:P.green,  t:[470,360], name:"A₂"},
+      {c:P.violet, t:[545,212], name:"A₃"},
+    ];
+
+    // transient per-beat layers so marks don't accumulate
+    let genGroup=null, b3=null, b4=null;
+    const wipe=(grp,d=420)=>{ if(grp) fade(grp,1,0,d); };
+
+    // BEAT 1 — left rail: each example is a (context → target) pair
+    const chipX=42, chipY=[200,288,376];
+    ex.forEach((e,i)=>{
+      const cy=chipY[i];
+      const chip=el("rect",{x:chipX,y:cy-15,width:66,height:30,rx:4,fill:P.deep,stroke:e.c,"stroke-width":1.2,opacity:0},g);
+      txt(g,chipX+33,cy+5,"C"+(i+1),"lblsm","middle",{fill:e.c});
+      fade(chip,0,1,360,i*120);
+      const ln=el("path",{d:curve([[chipX+66,cy],[px,(cy+e.t[1])/2],[e.t[0]-12,e.t[1]]]),
+        fill:"none",stroke:e.c,"stroke-width":1,"stroke-dasharray":"3 3",opacity:0},g);
+      drawOn(ln,520,320+i*120); fade(ln,0,.42,250,320+i*120);
+    });
+
+    // BEAT 1b — targets (stars) + ε balls
+    ex.forEach((e,i)=>{
+      const s=el("path",{d:starPath(e.t[0],e.t[1],11),fill:e.c,opacity:0},g);
+      pop(s,420,520+i*150); fade(s,0,1,300,520+i*150);
+      const lab=txt(g,e.t[0]+15,e.t[1]-13,e.name,"lblsm","start",{fill:e.c}); lab.style.opacity=0; fade(lab,0,1,300,620+i*150);
+      const ring=el("circle",{cx:e.t[0],cy:e.t[1],r:EPS,fill:e.c,"fill-opacity":0.05,
+        stroke:e.c,"stroke-width":1.1,"stroke-dasharray":"5 4",opacity:0},g);
+      e.ring=ring; drawOn(ring,520,1150+i*120); fade(ring,0,.85,300,1150+i*120);
+    });
+    after(1350,()=>{ // ε_RS label on A2
+      const e=ex[1];
+      const l=el("line",{x1:e.t[0],y1:e.t[1],x2:e.t[0]+EPS,y2:e.t[1],stroke:e.c,"stroke-width":1,opacity:0},g);
+      fade(l,0,.7,300);
+      const et=txt(g,e.t[0]+EPS/2,e.t[1]-6,"ε_RS","lblsm","middle",{fill:e.c}); et.style.opacity=0; fade(et,0,1,300,120);
+    });
+
+    // BEAT 2 — generator emits K candidates for example 1 (generator fades after they land)
+    const gnx=720,gny=246;
+    after(1850,()=>{
+      genGroup=el("g",{},g);
+      const net=miniNet(genGroup,gnx,gny-42,86,84,[1,3,4,2],P.blue);
+      net.nodes.forEach(n=>{n.style.opacity=0;fade(n,0,.9,300,80);});
+      txt(genGroup,gnx+43,gny-54,"G_θ(C₁, z)","lblsm","middle");
+    });
+    const cpos=[[286,256],[326,214],[268,224],[331,257],[466,357],[396,300]];
+    const cands=[];
+    after(2050,()=>{
+      cpos.forEach((p,k)=>{
+        const dot=el("circle",{cx:gnx+43,cy:gny,r:5.5,fill:P.blue,opacity:0},g);
+        fade(dot,0,.95,200,k*90); moveTo(dot,gnx+43,gny,p[0],p[1],760,k*90);
+        cands.push({node:dot,p,k});
+      });
+      after(950,()=>txt(g,300,py+ph+24,"K candidates for example 1","lblsm","middle"));
+    });
+
+    // equation built / revealed during the test
+    const eq=buildEqn(g,70,EQY,[
+      {t:"reject",c:P.red},{t:" if  "},{t:"min",c:P.amber},{t:"_{j≠i}",c:P.amber},
+      {t:" D(Â",c:P.ink},{t:"⁽ᵏ⁾",c:P.blue},{t:", A_j)",c:P.soft},{t:"  <  "},{t:"ε_RS",c:P.teal}
+    ],22);
+    showEqn(eq,[0,1],3250);
+
+    // BEAT 3 — THE TEST: stray candidate vs OTHER targets (j ≠ i)
+    after(3450,()=>{
+      wipe(genGroup);                       // generator done — clear it
+      b3=el("g",{},g);
+      const stray=cands[4]; // landed inside A2's ball
+      showEqn(eq,[2,3],0); pulseEqn(eq[2],120,P.amber); pulseEqn(eq[3],120,P.amber);
+      [1,2].forEach((j,n)=>{ // compare to A2 and A3 only
+        const e=ex[j];
+        const ln=el("line",{x1:stray.p[0],y1:stray.p[1],x2:e.t[0],y2:e.t[1],
+          stroke:P.soft,"stroke-width":1.1,"stroke-dasharray":"4 3",opacity:0},b3);
+        fade(ln,0,.7,300,n*160);
+      });
+      showEqn(eq,[4,5,6],260);
+      after(720,()=>{
+        showEqn(eq,[7,8],0); pulseEqn(eq[8],100,P.teal);
+        A(ex[1].ring,[{"stroke-width":1.1},{"stroke-width":3},{"stroke-width":1.1}],{duration:700});
+        const c=stray.p;
+        // the ✗ and faded dot persist (they show the outcome); the lines/label are transient
+        const xm=el("path",{d:`M ${c[0]-7} ${c[1]-7} L ${c[0]+7} ${c[1]+7} M ${c[0]+7} ${c[1]-7} L ${c[0]-7} ${c[1]+7}`,
+          stroke:P.red,"stroke-width":2.4,opacity:0},g);
+        fade(xm,0,1,300,150); fade(stray.node,.95,.18,500,150); stray.rejected=true;
+        const t=txt(b3,c[0]+11,c[1]+22,"redundant → rejected","lblsm","start",{fill:P.red}); t.style.opacity=0; fade(t,0,1,400,250);
+      });
+    });
+
+    // BEAT 4 — diagonal exclusion: the j = i link we never draw
+    after(5450,()=>{
+      wipe(b3);                             // clear Beat 3's comparison lines
+      b4=el("g",{},g);
+      const good=cands[1]; // near A1, would survive
+      [1,2].forEach((j,n)=>{ // its comparisons to others are large → survives
+        const e=ex[j];
+        const ln=el("line",{x1:good.p[0],y1:good.p[1],x2:e.t[0],y2:e.t[1],
+          stroke:P.green,"stroke-width":1,"stroke-dasharray":"4 3",opacity:0},b4);
+        fade(ln,0,.5,300,n*120);
+      });
+      const e0=ex[0];
+      const own=el("line",{x1:good.p[0],y1:good.p[1],x2:e0.t[0],y2:e0.t[1],
+        stroke:P.faint,"stroke-width":1.4,"stroke-dasharray":"2 4",opacity:0},b4);
+      fade(own,0,.55,300,200);
+      const mid=[(good.p[0]+e0.t[0])/2,(good.p[1]+e0.t[1])/2];
+      const ban=el("circle",{cx:mid[0],cy:mid[1],r:8,fill:"none",stroke:P.faint,"stroke-width":1.6,opacity:0},b4);
+      const sl=el("line",{x1:mid[0]-5,y1:mid[1]-5,x2:mid[0]+5,y2:mid[1]+5,stroke:P.faint,"stroke-width":1.6,opacity:0},b4);
+      fade(ban,0,.8,300,420); fade(sl,0,.8,300,420);
+      const t=txt(b4,mid[0]+12,mid[1]-9,"own target — excluded (j = i)","lblsm","start",{fill:P.faint}); t.style.opacity=0; fade(t,0,1,400,520);
+      pulseEqn(eq[3],520,P.amber);
+    });
+
+    // BEAT 5 — pull nearest survivor to A1 (hard IMLE loss)
+    after(7050,()=>{
+      wipe(b4);                             // clear Beat 4's lines, leave the final pull clean
+      const e0=ex[0];
+      const survivors=cands.filter(c=>!c.rejected);
+      let best=null,bd=1e9; survivors.forEach(c=>{const d=dist(c.p,e0.t); if(d<bd){bd=d;best=c;}});
+      if(best){
+        const ln=el("line",{x1:best.p[0],y1:best.p[1],x2:e0.t[0],y2:e0.t[1],stroke:e0.c,"stroke-width":1.6,"stroke-dasharray":"4 3",opacity:0},g);
+        fade(ln,0,.9,300,300);
+        const nx=best.p[0]+(e0.t[0]-best.p[0])*.6, ny=best.p[1]+(e0.t[1]-best.p[1])*.6;
+        moveTo(best.node,best.p[0],best.p[1],nx,ny,700,500);
+        A(ln,[{x1:best.p[0],y1:best.p[1]},{x1:nx,y1:ny}],{duration:700,delay:500});
+        A(best.node,[{r:5.5},{r:7}],{duration:700,delay:500});
+        const t=txt(g,e0.t[0]-14,e0.t[1]+30,"survivor pulled to A₁  (hard loss)","lblsm","end",{fill:e0.c}); t.style.opacity=0; fade(t,0,1,400,700);
+      }
+    });
+
+    const gl=txt(g,70,GLY,"a candidate matching another example's target is redundant; the j ≠ i exclusion keeps its own candidate safe","gloss");
+    gl.style.opacity=0; fade(gl,0,1,500,2200);
+  }
+
+  // ============================================================ ACT 5 — INFERENCE PROXYSCORE
+  function act5(){
+    const g=groups[4]; clear(g);
+    txt(g,70,118,"at test time: sample K candidates, keep the one that best continues the motion","lblsm");
+
+    // previous action
+    const px=140,py=300;
+    txt(g,px,py-58,"last action a_{t-1}","lblsm","middle");
+    el("line",{x1:px-38,y1:py+18,x2:px+34,y2:py-22,stroke:P.ink,"stroke-width":3,"stroke-linecap":"round","marker-end":"url(#ar)"},g);
+
+    // current state + K first-step vectors
+    const sx=360,sy=300;
+    el("circle",{cx:sx,cy:sy,r:6,fill:P.ink},g);
+    txt(g,sx,sy+26,"current state","lblsm","middle");
+    const K=8,scores=[],target=Math.atan2(-40,72);
+    for(let k=0;k<K;k++){const ang=-1.15+k*(2.3/(K-1));
+      const fx=sx+Math.cos(ang)*78,fy=sy+Math.sin(ang)*78;
+      const v=el("line",{x1:sx,y1:sy,x2:fx,y2:fy,stroke:CYC[k%CYC.length],"stroke-width":2.4,"stroke-linecap":"round",opacity:0},g);
+      const tr=el("path",{d:curve([[fx,fy],[fx+60,fy+(k-3.5)*7],[fx+120,fy+(k-3.5)*14]]),
+        fill:"none",stroke:CYC[k%CYC.length],"stroke-width":1.2,opacity:0},g);
+      const diff=Math.abs(ang-target);
+      scores.push({k,v,tr,diff});
+      after(400+k*70,()=>{drawOn(v,380);fade(v,0,.9,200);drawOn(tr,500,120);fade(tr,0,.35,200,120);});
+    }
+    // score bars (well-spaced column on right)
+    after(1600,()=>{
+      const bx=720,by=175,bw=300;
+      txt(g,bx,by-18,"ProxyScore = ‖ â₁⁽ᵏ⁾ − a_{t-1} ‖   (lower better)","lblsm");
+      const maxD=Math.max(...scores.map(s=>s.diff));
+      const best=scores.reduce((a,b)=>a.diff<b.diff?a:b);
+      const sorted=[...scores].sort((a,b)=>a.diff-b.diff);
+      sorted.forEach((s,i)=>{const y=by+i*30,w=18+(s.diff/maxD)*(bw-18);
+        const bar=el("rect",{x:bx,y,width:0,height:20,rx:3,fill:s.k===best.k?P.green:CYC[s.k%CYC.length],opacity:.85},g);
+        txt(g,bx-8,y+15,"k"+(s.k+1),"lblsm","end");
+        A(bar,[{width:0},{width:w}],{duration:450,delay:i*60,easing:"cubic-bezier(.4,0,.2,1)"});
+        if(s.k===best.k){const t=txt(g,bx+w+8,y+15,"← k*  selected","lblsm","start",{fill:P.green}); t.style.opacity=0; fade(t,0,1,400,500);}
+      });
+      after(800,()=>scores.forEach(s=>{
+        if(s.k===best.k){A(s.v,[{"stroke-width":2.4},{"stroke-width":4.2}],{duration:400}); fade(s.tr,.35,.95,400);}
+        else {fade(s.v,.9,.22,500); fade(s.tr,.35,.07,500);}
+      }));
+    });
+    // equation
+    const eq=buildEqn(g,70,EQY,[
+      {t:"k*",c:P.green},{t:"="},{t:"argmin_k",c:P.ink},{t:" ‖ "},{t:"â₁⁽ᵏ⁾",c:P.ink},{t:" − "},{t:"a_{t-1}",c:P.soft},{t:" ‖₂"}
+    ],22);
+    showEqn(eq,[0,1,2,3,4,5,6,7],700,90);
+    after(2400,()=>pulseEqn(eq[0],0,P.green));
+    const gl=txt(g,70,GLY,"no extra network — selection reuses the first predicted action, so it stays single-pass and fast","gloss");
+    gl.style.opacity=0; fade(gl,0,1,500,1800);
+  }
+
+  // ============================================================ ACT 6 — RECEDING HORIZON
+  function act6(){
+    const g=groups[5]; clear(g);
+    txt(g,70,118,"execute the first Tₐ steps, slide the observation window, re-encode and replan","lblsm");
+    const sx=150,sy=300;
+    const pts=[[sx,sy],[sx+120,sy-46],[sx+250,sy-14],[sx+380,sy-58],[sx+500,sy-26]];
+    const full=el("path",{d:curve(pts),fill:"none",stroke:P.faint,"stroke-width":2,"stroke-dasharray":"4 4",opacity:0},g);
+    drawOn(full,800,200); fade(full,0,.6,300,200);
+    txt(g,sx+500,sy-44,"planned T_p","lblsm");
+    const exe=el("path",{d:curve(pts.slice(0,3)),fill:"none",stroke:P.violet,"stroke-width":3.2,"stroke-linecap":"round",opacity:0},g);
+    after(900,()=>{drawOn(exe,900);fade(exe,0,1,300);});
+    txt(g,sx+130,sy+40,"executed Tₐ","lblsm","middle",{fill:P.violet});
+
+    // arm
+    const rg=el("g",{transform:`translate(${sx},${sy})`},g);
+    const BASE=[0,150];
+    function arm(tx,ty){clear(rg);
+      el("line",{x1:0,y1:BASE[1],x2:0,y2:BASE[1]-30,stroke:P.ink,"stroke-width":4,"stroke-linecap":"round"},rg);
+      const sh=[0,BASE[1]-30];
+      const j1=[sh[0]+(tx-sh[0])*.34,sh[1]+(ty-sh[1])*.34];
+      const j2=[sh[0]+(tx-sh[0])*.67,sh[1]+(ty-sh[1])*.67];
+      [[sh,j1],[j1,j2],[j2,[tx,ty]]].forEach(([a,b])=>el("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:P.ink,"stroke-width":3.4,"stroke-linecap":"round"},rg));
+      [sh,j1,j2].forEach(p=>el("circle",{cx:p[0],cy:p[1],r:3.5,fill:P.ink},rg));
+      el("circle",{cx:tx,cy:ty,r:5,fill:P.violet},rg);}
+    after(1000,()=>{const L=exe.getTotalLength(),t0=performance.now(),D=1500;
+      (function step(now){if(stale)return; const u=Math.min(1,(now-t0)/D); const pt=exe.getPointAtLength(u*L);
+        arm(pt.x-sx,pt.y-sy); if(u<1)requestAnimationFrame(step);})(performance.now());});
+
+    // window slide
+    after(2700,()=>{const win=el("rect",{x:sx-12,y:sy-92,width:160,height:184,rx:6,fill:"none",stroke:P.teal,"stroke-width":1.5,"stroke-dasharray":"6 4",opacity:0},g);
+      fade(win,0,.9,400); txt(g,sx+68,sy-100,"obs window","lblsm","middle",{fill:P.teal});
+      A(win,[{transform:"translateX(0)"},{transform:"translateX(245px)"}],{duration:1200,delay:400,easing:"cubic-bezier(.4,0,.2,1)"});});
+
+    // loop
+    after(3900,()=>{const loop=el("path",{d:`M ${sx+540} ${sy-26} C ${sx+640} ${sy+110}, ${sx-40} ${sy+150}, ${sx} ${sy+40}`,
+      fill:"none",stroke:P.green,"stroke-width":1.8,"stroke-dasharray":"6 4",opacity:0,"marker-end":"url(#arG)"},g);
+      drawOn(loop,1100); fade(loop,0,.85,300);
+      const r=txt(g,sx+250,sy+135,"closed loop · single pass · 30–50 Hz","gloss","middle",{fill:P.green}); r.style.opacity=0; fade(r,0,1,500,500);});
+
+    const eq=buildEqn(g,70,EQY,[
+      {t:"apply Â^{k*}_{1:Tₐ}",c:P.violet},{t:"  →  "},{t:"t ← t + Tₐ",c:P.ink},{t:"  →  "},{t:"re-encode & replan",c:P.teal}
+    ],22);
+    showEqn(eq,[0],700); showEqn(eq,[1,2],1400); showEqn(eq,[3,4],2100);
+    const gl=txt(g,70,GLY,"only Tₐ of the T_p predicted steps run before replanning — the loop closes on fresh observations","gloss");
+    gl.style.opacity=0; fade(gl,0,1,500,1600);
+  }
+
+  // ============================================================ MASTER
+  const ACTS=[
+    {num:"01 / multisensory encoding", run:act1},
+    {num:"02 / single-pass generation", run:act2},
+    {num:"03 / IMLE objective", run:act3},
+    {num:"04 / batch-global rejection", run:act4},
+    {num:"05 / inference · ProxyScore", run:act5},
+    {num:"06 / receding-horizon control", run:act6},
+  ];
+
+  // ---- per-slide description, grounded in the Proposed Approach section (edit freely) ----
+  const CAPS=[
+    "At each timestep, every available sensor is encoded separately, then fused into a single context token cₜ — preserving the temporal order of the observation history.",
+    "Learned action-query tokens cross-attend to the context and a latent z; a bidirectional Performer (FAVOR⁺ linear attention) decodes all K candidate trajectories in one forward pass.",
+    "IMLE matches every demonstration to its nearest generated sample, so no demonstrated mode is averaged away — samples far from all data are simply never selected.",
+    "Each candidate is compared against every non-paired target in the minibatch and rejected if it lands within ε_RS of one. The j ≠ i exclusion stops a candidate being rejected by its own target.",
+    "At test time K candidates are sampled in one pass; PRISM keeps the one whose first action best continues the previous motion — no extra network, so inference stays single-pass.",
+    "The selected chunk is executed for Tₐ steps, then the observation window slides and the policy re-encodes and replans — closing the loop at 30–50 Hz.",
+  ];
+
+  groups.forEach(g=>{g.style.transition="opacity .55s ease";g.style.opacity=0;});
+
+  let cur=-1;
+  const prevBtn=document.getElementById("prev");
+  const nextBtn=document.getElementById("next");
+  const replayBtn=document.getElementById("replay");
+  const stage=document.getElementById("stage");
+
+  function render(i){
+    const myGen=++gen; stale=false; clearTimers(); clearAnims();
+    cur=i;
+    const act=ACTS[i];
+    actNum.textContent=act.num;
+    caption.style.opacity=0;
+    rail.forEach((r,n)=>r.classList.toggle("on",n===i));
+    groups.forEach((g,n)=>g.style.opacity=(n===i?1:0));
+    act.run();
+    setTimeout(()=>{ if(gen===myGen){caption.textContent=CAPS[i]; caption.style.opacity=1;} },420);
+    prevBtn.toggleAttribute("disabled", i<=0);
+    nextBtn.toggleAttribute("disabled", i>=ACTS.length-1);
+  }
+  const go=(d)=>{ const n=Math.min(ACTS.length-1,Math.max(0,cur+d)); if(n!==cur) render(n); };
+
+  // controls: buttons, dots, click, keys, swipe, wheel (with boundary release)
+  nextBtn.addEventListener("click",e=>{e.stopPropagation();go(1);});
+  prevBtn.addEventListener("click",e=>{e.stopPropagation();go(-1);});
+  replayBtn.addEventListener("click",e=>{e.stopPropagation();render(cur);});
+  rail.forEach((r,n)=>r.addEventListener("click",e=>{e.stopPropagation();render(n);}));
+  stage.addEventListener("click",()=>go(1));
+  window.addEventListener("keydown",e=>{
+    if(e.key==="ArrowRight"||e.key==="ArrowDown"){go(1);}
+    else if(e.key==="ArrowLeft"||e.key==="ArrowUp"){go(-1);}
+  });
+  let tx=0;
+  stage.addEventListener("touchstart",e=>{tx=e.touches[0].clientX;},{passive:true});
+  stage.addEventListener("touchend",e=>{const dx=e.changedTouches[0].clientX-tx; if(Math.abs(dx)>40) go(dx<0?1:-1);},{passive:true});
+  let wlock=false;
+  stage.addEventListener("wheel",e=>{
+    const d=e.deltaY>0?1:-1;
+    const atEnd=(d>0&&cur>=ACTS.length-1)||(d<0&&cur<=0);
+    if(atEnd) return;                 // release at the ends so the page scrolls past
+    e.preventDefault();
+    if(wlock||Math.abs(e.deltaY)<6) return;
+    wlock=true; go(d); setTimeout(()=>{wlock=false;},650);
+  },{passive:false});
+
+  render(0);
+})();
+</script>
+</body>
+</html>
